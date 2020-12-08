@@ -4,7 +4,7 @@ class Instruction:
         self.val = int(val)
 
     def __repr__(self):
-        return "{} {:3d}".format(self.op, self.val)
+        return "{} {:5d}".format(self.op, self.val)
 
 
 class Processor:
@@ -77,8 +77,8 @@ def main():
             proc.mutate(mutation)
             proc.execute()
             if proc.infinite == False:
+                proc.print_execution_order()
                 print("Accumulator: {}".format(proc.acc))
-                # proc.print_execution_order()
 
 
 if __name__ == "__main__":
