@@ -10,12 +10,45 @@ def get_lines(filename):
         return contents.strip().split("\n")
 
 
+def parse_dir_amount(line):
+    split = line.split()
+    return (split[0], int(split[1]))
+
+
 def part1(filename):
-    print(f"Part 1: {filename}")
+    lines = get_lines(filename)
+    dir_amount_pairs = [parse_dir_amount(l) for l in lines]
+    horizontal = 0
+    depth = 0
+    for pair in dir_amount_pairs:
+        match pair:
+            case ("forward", x):
+                horizontal += x
+            case ("down", x):
+                depth += x
+            case ("up", x):
+                depth -= x
+    answer = horizontal * depth
+    print(answer)
 
 
 def part2(filename):
-    print(f"Part 2: {filename}")
+    lines = get_lines(filename)
+    dir_amount_pairs = [parse_dir_amount(l) for l in lines]
+    horizontal = 0
+    depth = 0
+    aim = 0
+    for pair in dir_amount_pairs:
+        match pair:
+            case ("forward", x):
+                horizontal += x
+                depth += (aim * x)
+            case ("down", x):
+                aim += x
+            case ("up", x):
+                aim -= x
+    answer = horizontal * depth
+    print(answer)
 
 
 if __name__ == "__main__":
