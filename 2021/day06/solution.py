@@ -27,6 +27,7 @@ def part1(filename):
         fish_born_after_days(fish_age, days) for fish_age in starting_fish_ages
     ]
     print(sum(num_new_fish) + len(starting_fish_ages))
+    print(f"Cache info: {fish_born_after_days.cache_info()}")
 
 
 def part2(filename):
@@ -36,6 +37,7 @@ def part2(filename):
         fish_born_after_days(fish_age, days) for fish_age in starting_fish_ages
     ]
     print(sum(num_new_fish) + len(starting_fish_ages))
+    print(f"Cache info: {fish_born_after_days.cache_info()}")
 
 
 if __name__ == "__main__":
