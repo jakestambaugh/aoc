@@ -27,15 +27,19 @@ int main() {
     rewind(file);
 
     char buffer[128];
+    int total = 0;
     memset(buffer, 0, sizeof(buffer));
     while (fgets(buffer, sizeof(buffer) - 1, file)) {
         int x;
         int y;
         int z;
         sscanf(buffer, "%dx%dx%d", &x, &y, &z);
+        int area = totalArea(x, y, z);
         printf("Area of %dx%dx%d is %d\n", x, y, z, totalArea(x, y, z));
+        total = total + area; 
     }
 
+    printf("total %d\n", total);
     fclose(file);
     return 0;
 }
