@@ -4,69 +4,6 @@
 #include <getopt.h>
 #include <string.h>
 
-typedef struct
-{
-  size_t *data;
-  size_t *tail;
-  long size;
-  long capacity;
-} vector;
-
-vector *vector_new()
-{
-  vector *v = (vector *)malloc(sizeof(vector));
-
-  // Start with 16 elements by default
-  long starting_capacity = 16;
-  char *data = (char *)malloc(sizeof(size_t) * starting_capacity);
-  if (data == NULL || v == NULL)
-  {
-    printf("Failed to allocate memory for vector\n");
-    return NULL;
-  }
-
-  v->data = data;
-  v->tail = v->data;
-
-  v->size = 0;
-  v->capacity = starting_capacity;
-  return v;
-}
-
-void vector_free(vector *v)
-{
-  free(v->data);
-  free(v);
-}
-
-vector *vector_resize(vector *v)
-{
-  // always double
-  long new_capacity = v->capacity * 2;
-  size_t *new_buffer = (size_t *)realloc((void *)v->data, new_capacity);
-  if (new_buffer == NULL)
-  {
-    fprintf(stderr, "Failed to reallocated memory for vector expansion\n");
-    return NULL;
-  }
-  v->data = new_buffer;
-  v->tail = v->data + (size_t)(sizeof(size_t) * v->size);
-  v->capacity = new_capacity;
-}
-
-void vector_push(vector *v, char value)
-{
-  if (v->size + 1 >= v->capacity)
-  {
-    vector *new = vector_resize(v);
-    if (new == NULL)
-    {
-      fprintf(stderr, "Failed to push element to vector\n");
-      return;
-    }
-  }
-}
-
 /**
  * Read the content of a file into a buffer.
  *
@@ -113,30 +50,52 @@ char *read_file_into_memory(const char *filename)
   return buffer;
 }
 
-vector *split_lines(char *buffer)
+// Size is an out pointer
+char **split_string_into_lines(char *buffer, size_t *num_lines)
 {
-  vector *v = vector_new();
-  char *current = buffer;
-  size_t while (*current != '\0')
+  // Count the number of lines in the string
+  size_t lines_alloc = 1;
+  for (char *c = buffer; *c != '\0'; c++)
   {
-    if (*current == '\n')
+    if (*c == '\n')
     {
-      *current = '\0';
+      lines_alloc++;
     }
-    current++;
   }
-  return buffer;
+  *num_lines = lines_alloc;
+
+  // Allocate memory for the line pointers
+  char **lines = malloc(lines_alloc * sizeof(char *));
+  if (lines == NULL)
+  {
+    printf("Failed to allocate memory\n");
+    return NULL;
+  }
+
+  // Split the string into lines
+  size_t line_index = 0;
+  char *line = strtok(buffer, "\n");
+  while (line != NULL)
+  {
+    lines[line_index++] = line;
+    line = strtok(NULL, "\n");
+  }
+
+  // Null-terminate the array
+  lines[line_index] = NULL;
+
+  return lines;
 }
 
 void part1(char *filename)
 {
   printf("Part 1: %s\n", filename);
   char *buffer = read_file_into_memory(filename);
-  char *lines = split_lines(buffer);
-  while (*lines != '\0')
+  size_t num_lines;
+  char **lines = split_string_into_lines(buffer, &num_lines);
+  for (size_t i = 0; i < num_lines; i++)
   {
-    printf("%s\n", lines);
-    lines += strlen(lines) + 1;
+    printf("%s\n", lines[i]);
   }
 }
 
