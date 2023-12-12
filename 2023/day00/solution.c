@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
       {"part", required_argument, NULL, 'p'},
       {"test", no_argument, NULL, 't'},
       {NULL, 0, NULL, 0}};
-  while ((opt = getopt_long(argc, argv, "p:t:", longopts, &indexptr)) != -1)
+  while ((opt = getopt_long(argc, argv, "p:t", longopts, &indexptr)) != -1)
   {
     switch (opt)
     {

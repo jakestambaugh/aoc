@@ -1,6 +1,31 @@
 {
     "version": "0.2.0",
     "configurations": [
+
+    {
+        "name": "Launch and Debug (-t)",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "/workspaces/aoc/2023/day01/solution",
+        "args": ["-t"],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}/2023/day00",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            },
+            {
+                "description": "Set Disassembly Flavor to Intel",
+                "text": "-gdb-set disassembly-flavor intel",
+                "ignoreFailures": true
+            }
+        ]
+    },
         {
             "name": "Python: Current File",
             "type": "python",

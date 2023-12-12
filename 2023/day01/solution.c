@@ -87,18 +87,61 @@ char **split_string_into_lines(char *buffer, size_t *num_lines)
   return lines;
 }
 
-static char *[] num_chars = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+static char num_chars[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9'};
+static char *num_words[] = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
+
+typedef struct
+{
+  int first;
+  int last;
+} pair_t;
+
+pair_t find_first_and_last(char *line)
+{
+  pair_t pair;
+  pair.first = -1;
+  pair.last = -1;
+  for (int i = 0; i < strlen(line); i++)
+  {
+    for (int j = 0; j < 9; j++)
+    {
+      if (line[i] == num_chars[j])
+      {
+        pair.first = j + 1;
+        goto found_first;
+      }
+    }
+  }
+found_first:
+
+  for (int m = strlen(line) - 1; m >= 0; m--)
+  {
+    for (int j = 0; j < 9; j++)
+    {
+      if (line[m] == num_chars[j])
+      {
+        pair.last = j + 1;
+        goto found_last;
+      }
+    }
+  }
+found_last:
+
+  return pair;
+}
 
 void part1(char *filename)
 {
-  printf("Part 1: %s\n", filename);
   char *buffer = read_file_into_memory(filename);
   size_t num_lines;
   char **lines = split_string_into_lines(buffer, &num_lines);
+  int sum = 0;
   for (size_t i = 0; i < num_lines; i++)
   {
-    printf("%s\n", lines[i]);
+    pair_t pair = find_first_and_last(lines[i]);
+    sum += (pair.first * 10) + pair.last;
   }
+  printf("Part 1: %d\n", sum);
 }
 
 void part2(char *filename)
@@ -117,7 +160,7 @@ int main(int argc, char *argv[])
       {"part", required_argument, NULL, 'p'},
       {"test", no_argument, NULL, 't'},
       {NULL, 0, NULL, 0}};
-  while ((opt = getopt_long(argc, argv, "p:t:", longopts, &indexptr)) != -1)
+  while ((opt = getopt_long(argc, argv, "p:t", longopts, &indexptr)) != -1)
   {
     switch (opt)
     {
