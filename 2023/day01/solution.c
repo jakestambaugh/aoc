@@ -81,16 +81,13 @@ char **split_string_into_lines(char *buffer, size_t *num_lines)
     line = strtok(NULL, "\n");
   }
 
-  // Null-terminate the array
-  lines[line_index] = NULL;
-
   return lines;
 }
 
 static char num_chars[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9'};
 static char *num_words[] = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
 
-typedef struct
+typedef struct pair
 {
   int first;
   int last;
@@ -116,17 +113,51 @@ found_first:
 
   for (int m = strlen(line) - 1; m >= 0; m--)
   {
-    for (int j = 0; j < 9; j++)
+    for (int n = 0; n < 9; n++)
     {
-      if (line[m] == num_chars[j])
+      if (line[m] == num_chars[n])
       {
-        pair.last = j + 1;
+        pair.last = n + 1;
         goto found_last;
       }
     }
   }
 found_last:
 
+  return pair;
+}
+
+pair_t find_first_and_last_with_replacement(char *line, int line_index)
+{
+  char *new_line = (char *)malloc((strlen(line) + 1) * sizeof(char));
+  if (new_line == NULL)
+  {
+    printf("Failed to allocate memory\n");
+    exit(1);
+  }
+
+  size_t index = 0;
+  while (index < strlen(line))
+  {
+    int found = 0;
+    for (int i = 0; i < 9; i++)
+    {
+      if (strncmp(line + index, num_words[i], strlen(num_words[i])) == 0)
+      {
+        new_line[index] = num_chars[i];
+        found = 1;
+      }
+    }
+    if (!found)
+    {
+      new_line[index] = line[index];
+    }
+    index++;
+  }
+  new_line[index] = '\0';
+
+  pair_t pair = find_first_and_last(new_line);
+  free(new_line);
   return pair;
 }
 
@@ -141,12 +172,26 @@ void part1(char *filename)
     pair_t pair = find_first_and_last(lines[i]);
     sum += (pair.first * 10) + pair.last;
   }
+  free(buffer);
+  free(lines);
   printf("Part 1: %d\n", sum);
 }
 
 void part2(char *filename)
 {
-  printf("Part 2: %s\n", filename);
+  char *buffer = read_file_into_memory(filename);
+  size_t num_lines;
+  char **lines = split_string_into_lines(buffer, &num_lines);
+  int sum = 0;
+
+  for (size_t i = 0; i < num_lines; i++)
+  {
+    pair_t pair = find_first_and_last_with_replacement(lines[i], i);
+    sum += (pair.first * 10) + pair.last;
+  }
+  free(buffer);
+  free(lines);
+  printf("Part 2: %d\n", sum);
 }
 
 int main(int argc, char *argv[])

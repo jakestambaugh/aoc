@@ -67,7 +67,6 @@ def part2(filename):
         first, last = find_first_and_last(new_line)
         i = int(first + last)
         total += i
-        print(f"{line} -> {new_line} -> {first},{last} -> {i}")
     print(f"Part 2: {total}")
 
 

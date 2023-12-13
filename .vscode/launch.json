@@ -3,13 +3,13 @@
     "configurations": [
 
     {
-        "name": "Launch and Debug (-t)",
+        "name": "Launch and Debug",
         "type": "cppdbg",
         "request": "launch",
         "program": "/workspaces/aoc/2023/day01/solution",
-        "args": ["-t"],
+        "args": ["-p", "2"],
         "stopAtEntry": false,
-        "cwd": "${workspaceFolder}/2023/day00",
+        "cwd": "${workspaceFolder}/2023/day01",
         "environment": [],
         "externalConsole": false,
         "MIMode": "gdb",
