@@ -24,6 +24,13 @@ char *read_file_into_memory(const char *filename)
   long file_size = ftell(file);
   rewind(file);
 
+  if (file_size < 1)
+  {
+    printf("Failed to get file size\n");
+    fclose(file);
+    return NULL;
+  }
+
   // Allocate memory for the file content
   char *buffer = (char *)malloc(file_size + 1);
   if (buffer == NULL)
@@ -91,17 +98,36 @@ void part1(char *filename)
 {
   printf("Part 1: %s\n", filename);
   char *buffer = read_file_into_memory(filename);
+  if (buffer == NULL)
+  {
+    return;
+  }
   size_t num_lines;
   char **lines = split_string_into_lines(buffer, &num_lines);
   for (size_t i = 0; i < num_lines; i++)
   {
     printf("%s\n", lines[i]);
   }
+  free(buffer);
+  free(lines);
 }
 
 void part2(char *filename)
 {
   printf("Part 2: %s\n", filename);
+  char *buffer = read_file_into_memory(filename);
+  if (buffer == NULL)
+  {
+    return;
+  }
+  size_t num_lines;
+  char **lines = split_string_into_lines(buffer, &num_lines);
+  for (size_t i = 0; i < num_lines; i++)
+  {
+    printf("%s\n", lines[i]);
+  }
+  free(buffer);
+  free(lines);
 }
 
 int main(int argc, char *argv[])
