@@ -4,6 +4,34 @@
 #include <getopt.h>
 #include <string.h>
 
+typedef struct
+{
+  int r;
+  int g;
+  int b;
+} colors;
+
+colors new_color()
+{
+  colors c;
+  c.r = 0;
+  c.g = 0;
+  c.b = 0;
+  return c;
+}
+
+colors parse_color(char *line)
+{
+  colors c = new_color();
+  char *token = strtok(line, ",");
+  c.r = atoi(token);
+  token = strtok(NULL, ",");
+  c.g = atoi(token);
+  token = strtok(NULL, ",");
+  c.b = atoi(token);
+  return c;
+}
+
 /**
  * Read the content of a file into a buffer.
  *
