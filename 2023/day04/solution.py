@@ -48,12 +48,19 @@ def count_points(mine, winners):
     return points
 
 
+cache = {}
+
+
 def calculate_score_for_line(cards, line):
+    if line in cache:
+        return cache[line]
     mine, winners = cards[line]
     points = count_points(mine, winners)
-    return 1 + sum(
+    result = 1 + sum(
         calculate_score_for_line(cards, i) for i in range(line + 1, line + points + 1)
     )
+    cache[line] = result
+    return result
 
 
 def calculate_score_set(cards):
