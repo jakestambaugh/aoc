@@ -2,6 +2,7 @@
 Advent of Code utilities and skeleton
 """
 import argparse
+import time
 
 
 def get_lines(filename):
@@ -94,12 +95,26 @@ if __name__ == "__main__":
         action="store_true",
         help="Use the input in test.txt instead of input.txt",
     )
+    parser.add_argument(
+        "-b",
+        "--benchmark",
+        dest="benchmark",
+        action="store_true",
+        help="Collect timing information from run",
+    )
     parser.set_defaults(test=False)
     args = vars(parser.parse_args())
 
     filename = "test.txt" if args["test"] else "input.txt"
 
+    if args["benchmark"]:
+        start_time = time.perf_counter()
+
     if args["part"] == 1:
         part1(filename)
     elif args["part"] == 2:
         part2(filename)
+
+    if args["benchmark"]:
+        end_time = time.perf_counter()
+        print(f"Runtime: {end_time - start_time:.4f} seconds")

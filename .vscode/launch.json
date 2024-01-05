@@ -1,7 +1,6 @@
 {
     "version": "0.2.0",
     "configurations": [
-
     {
         "name": "Launch and Debug",
         "type": "cppdbg",
@@ -31,8 +30,9 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
+            "args": ["-p", "2", "-t"],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/2023/day02",
+            "cwd": "${workspaceFolder}/2023/day04",
             "justMyCode": true
         }
     ]
