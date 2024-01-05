@@ -38,19 +38,25 @@ def calculate_score(line):
     return points
 
 
+def count_points(mine, winners):
+    points = 0
+    winners = set(winners)
+    for i in mine:
+        if i in winners:
+            points += 1
+    return points
+
+
+def calculate_score_for_line(cards, line):
+    mine, winners = cards[line]
+    points = count_points(mine, winners)
+    return 1 + sum(
+        calculate_score_for_line(cards, i) for i in range(line + 1, line + points + 1)
+    )
+
+
 def calculate_score_set(cards):
-    scores = []
-    for card, (mine, winners) in cards.items():
-        winners = set(winners)
-        points = 0
-        for i in mine:
-            if i in winners:
-                if points == 0:
-                    points = 1
-                else:
-                    points = 2 * points
-        scores.append(points)
-    return scores
+    return sum(calculate_score_for_line(cards, i) for i in range(1, len(cards) + 1))
 
 
 def part1(filename):
@@ -67,7 +73,7 @@ def part2(filename):
         for card, (mine, winners) in [parse_line(line) for line in lines]
     }
     scores = calculate_score_set(cards)
-    print(f"Part 2: {filename}")
+    print(f"Part 2: {scores}")
 
 
 if __name__ == "__main__":
