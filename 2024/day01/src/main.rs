@@ -2,9 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 
 fn main() {
-    // File hosts.txt must exist in the current path
     if let Ok(contents) = fs::read_to_string("./input.txt") {
-        // Consumes the iterator, returns an (Optional) String
         let answer = part1(&contents);
         println!("Day 1 Part 1: {answer}");
         let answer = part2(&contents);
