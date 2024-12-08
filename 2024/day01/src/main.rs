@@ -11,7 +11,7 @@ fn main() {
 }
 
 fn parse(input: &str) -> (Vec<usize>, Vec<usize>) {
-    let lines = input.split("\n");
+    let lines = input.lines();
     let mut left_list = Vec::new();
     let mut right_list = Vec::new();
     for line in lines {
