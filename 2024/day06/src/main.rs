@@ -1,7 +1,10 @@
 use std::collections::HashSet;
 use std::fmt::{self, Debug};
 use std::fs;
-use std::ops::{Index, IndexMut};
+use std::ops::{Add, AddAssign, Index, IndexMut};
+
+use itertools::Itertools;
+use rayon::iter::{ParallelBridge, ParallelIterator};
 
 fn main() {
     if let Ok(contents) = fs::read_to_string("./input.txt") {
@@ -12,7 +15,7 @@ fn main() {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 enum Direction {
     Up,
     Right,
@@ -29,15 +32,22 @@ impl Direction {
             Self::Left => (-1, 0),
         }
     }
+
+    fn turn(&self) -> Self {
+        match self {
+            Self::Up => Self::Right,
+            Self::Right => Self::Down,
+            Self::Down => Self::Left,
+            Self::Left => Self::Up,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Square {
     Empty,
     Wall,
-    Player(Direction),
-    Visited(Direction),
-    Blockage,
+    Player,
 }
 
 impl Square {
@@ -45,87 +55,73 @@ impl Square {
         match self {
             Self::Empty => '.',
             Self::Wall => '#',
-            Self::Player(Direction::Up) => '^',
-            Self::Player(Direction::Right) => '>',
-            Self::Player(Direction::Down) => 'v',
-            Self::Player(Direction::Left) => '<',
-            Self::Visited(_) => 'X',
-            Self::Blockage => '@',
+            Self::Player => '^',
         }
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Point {
+    x: isize,
+    y: isize,
+}
+
+impl Point {
+    fn new(x: isize, y: isize) -> Self {
+        Self { x, y }
+    }
+}
+
+impl Add<Direction> for Point {
+    type Output = Self;
+
+    fn add(self, rhs: Direction) -> Self::Output {
+        let (dx, dy) = rhs.delta();
+        Point::new(self.x + dx, self.y + dy)
+    }
+}
+
+impl AddAssign<Direction> for Point {
+    fn add_assign(&mut self, rhs: Direction) {
+        *self = *self + rhs;
+    }
+}
+
+#[derive(Clone)]
 struct Grid {
     g: Vec<Vec<Square>>,
 }
 
-impl Index<[usize; 2]> for Grid {
+impl Index<Point> for Grid {
     type Output = Square;
-    fn index(&self, [x, y]: [usize; 2]) -> &Self::Output {
-        &self.g[y][x]
+    fn index(&self, Point { x, y }: Point) -> &Self::Output {
+        &self.g[y as usize][x as usize]
     }
 }
 
-impl IndexMut<[usize; 2]> for Grid {
-    fn index_mut(&mut self, [x, y]: [usize; 2]) -> &mut Self::Output {
-        &mut self.g[y][x]
+impl IndexMut<Point> for Grid {
+    fn index_mut(&mut self, Point { x, y }: Point) -> &mut Self::Output {
+        &mut self.g[y as usize][x as usize]
     }
 }
 
 impl Grid {
-    fn height(&self) -> usize {
-        self.g.len()
+    fn height(&self) -> isize {
+        self.g.len() as isize
     }
 
-    fn width(&self) -> usize {
-        self.g[0].len()
+    fn width(&self) -> isize {
+        self.g[0].len() as isize
     }
 
-    fn look(&self, dir: Direction, (x, y): (isize, isize)) -> Option<(usize, usize)> {
-        let (dx, dy) = dir.delta();
-        let mut distance = 0;
-        while x + distance * dx >= 0
-            && x + distance * dx < self.width() as isize
-            && y + distance * dy >= 0
-            && y + distance * dy < self.height() as isize
-        {
-            let coords = ((x + distance * dx) as usize, (y + distance * dy) as usize);
-            if let Square::Visited(d) = self[[coords.0, coords.1]] {
-                if d == dir {
-                    return Some(coords);
-                }
-            }
-            distance += 1;
-        }
-        None
-    }
-
-    fn find(&self, target: Square) -> Option<(isize, isize)> {
-        for (i, row) in self.g.iter().enumerate() {
-            for (j, &square) in row.iter().enumerate() {
-                if square == target {
-                    return Some((j as isize, i as isize));
-                }
-            }
-        }
-        None
-    }
-
-    fn count_all_visited(&self) -> usize {
-        self.g
-            .iter()
-            .flat_map(|rows| rows.iter())
-            .filter(|&&s| match s {
-                Square::Visited(_) => true,
-                _ => false,
-            })
-            .count()
+    fn within_bounds(&self, &Point { x, y }: &Point) -> bool {
+        x >= 0 && y >= 0 && x < self.width() && y < self.height()
     }
 }
 
 impl Debug for Grid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut sb = String::with_capacity(self.height() * self.width() * 2);
+        let mut sb = String::new();
         for i in &self.g {
             for j in i {
                 sb.push(j.to_char());
@@ -138,13 +134,13 @@ impl Debug for Grid {
 
 fn parse(input: &str) -> Grid {
     let mut rows = Vec::new();
-    for line in input.lines() {
+    for line in input.lines().map(|l| l.trim()) {
         let mut row = Vec::new();
         for c in line.chars() {
             if let Some(square) = match c {
                 '.' => Some(Square::Empty),
                 '#' => Some(Square::Wall),
-                '^' => Some(Square::Player(Direction::Up)),
+                '^' => Some(Square::Player),
                 _ => None,
             } {
                 row.push(square);
@@ -155,77 +151,73 @@ fn parse(input: &str) -> Grid {
     Grid { g: rows }
 }
 
-fn part1(input: &str) -> usize {
-    let mut grid = parse(input);
-    if let Some((pix, piy)) = grid.find(Square::Player(Direction::Up)) {
-        let mut px = pix;
-        let mut py = piy;
-        while px >= 0 && py >= 0 && px < grid.width() as isize && py < grid.height() as isize {
-            if let Square::Player(d) = grid[[px as usize, py as usize]] {
-                let mut direction = d;
-                let mut nx = px as isize + direction.delta().0;
-                let mut ny = py as isize + direction.delta().1;
-                grid[[px as usize, py as usize]] = Square::Visited(direction);
-                if nx >= 0 && ny >= 0 && nx < grid.width() as isize && ny < grid.height() as isize {
-                    if grid[[nx as usize, ny as usize]] == Square::Wall {
-                        direction = match direction {
-                            Direction::Up => Direction::Right,
-                            Direction::Right => Direction::Down,
-                            Direction::Down => Direction::Left,
-                            Direction::Left => Direction::Up,
-                        }
-                    }
-                    nx = px as isize + direction.delta().0;
-                    ny = py as isize + direction.delta().1;
-                    grid[[nx as usize, ny as usize]] = Square::Player(direction);
-                }
-                px = nx;
-                py = ny;
+fn find_player(grid: &Grid) -> Option<Point> {
+    for j in 0..grid.height() {
+        for i in 0..grid.width() {
+            let point = Point::new(i, j);
+            if grid[point] == Square::Player {
+                return Some(point);
             }
         }
     }
-    grid.count_all_visited()
+    None
+}
+
+fn part1(input: &str) -> usize {
+    let grid = parse(input);
+    let mut curr: Point = find_player(&grid).unwrap();
+    let mut direction = Direction::Up;
+    let mut visited: HashSet<Point> = HashSet::new();
+    while grid.within_bounds(&curr) {
+        visited.insert(curr);
+        let next = curr + direction;
+        if grid.within_bounds(&next) {
+            if grid[next] == Square::Wall {
+                direction = direction.turn();
+            }
+            curr = curr + direction;
+        } else {
+            break;
+        }
+    }
+    visited.len()
 }
 
 fn part2(input: &str) -> usize {
-    let mut grid = parse(input);
-    let mut blockages: HashSet<(usize, usize)> = HashSet::new();
-    if let Some((pix, piy)) = grid.find(Square::Player(Direction::Up)) {
-        let mut px = pix;
-        let mut py = piy;
-        while px >= 0 && py >= 0 && px < grid.width() as isize && py < grid.height() as isize {
-            if let Square::Player(facing) = grid[[px as usize, py as usize]] {
-                let mut direction = facing;
-                let mut nx = px as isize + direction.delta().0;
-                let mut ny = py as isize + direction.delta().1;
-                grid[[px as usize, py as usize]] = Square::Visited(facing);
-                if nx >= 0 && ny >= 0 && nx < grid.width() as isize && ny < grid.height() as isize {
-                    let righthand = match direction {
-                        Direction::Up => Direction::Right,
-                        Direction::Right => Direction::Down,
-                        Direction::Down => Direction::Left,
-                        Direction::Left => Direction::Up,
-                    };
-                    if grid[[nx as usize, ny as usize]] == Square::Wall {
-                        direction = righthand;
-                    } else if let Some(_) = grid.look(righthand, (px, py)) {
-                        blockages.insert((nx as usize, ny as usize));
-                    }
-                    nx = px as isize + direction.delta().0;
-                    ny = py as isize + direction.delta().1;
-                    grid[[nx as usize, ny as usize]] = Square::Player(direction);
-                }
-                px = nx;
-                py = ny;
+    let grid = parse(input);
+    let start_point: Point = find_player(&grid).unwrap();
+    (0..grid.width())
+        .cartesian_product(0..grid.height())
+        .par_bridge()
+        .flat_map(|(i, j)| {
+            let p = Point::new(i, j);
+            let mut new_grid = grid.clone();
+            if new_grid[p] == Square::Player || new_grid[p] == Square::Wall {
+                return None;
             }
-        }
-    }
-
-    for (x, y) in blockages.iter() {
-        grid[[*x, *y]] = Square::Blockage;
-    }
-    println!("{:?}", grid);
-    blockages.len()
+            new_grid[p] = Square::Wall;
+            let mut curr = start_point;
+            let mut direction = Direction::Up;
+            let mut visited: HashSet<(Point, Direction)> = HashSet::new();
+            while new_grid.within_bounds(&curr) {
+                visited.insert((curr, direction));
+                let mut next = curr + direction;
+                if new_grid.within_bounds(&next) {
+                    while new_grid[next] == Square::Wall {
+                        direction = direction.turn();
+                        next = curr + direction;
+                    }
+                    if visited.contains(&(next, direction)) {
+                        return Some(curr);
+                    }
+                    curr = curr + direction;
+                } else {
+                    break;
+                }
+            }
+            None
+        })
+        .count()
 }
 
 #[cfg(test)]
@@ -252,6 +244,6 @@ mod tests {
     #[test]
     fn test_part2() {
         let answer = part2(INPUT);
-        assert_eq!(7, answer);
+        assert_eq!(6, answer);
     }
 }
