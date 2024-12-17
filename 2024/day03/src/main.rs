@@ -3,13 +3,11 @@ use std::fs;
 use regex::Regex;
 
 fn main() {
-    // File hosts.txt must exist in the current path
     if let Ok(contents) = fs::read_to_string("./input.txt") {
-        // Consumes the iterator, returns an (Optional) String
         let answer = part1(&contents);
-        println!("Day 1 Part 1: {answer}");
+        println!("Day 3 Part 1: {answer}");
         let answer = part2(&contents);
-        println!("Day 1 Part 2: {answer}");
+        println!("Day 3 Part 2: {answer}");
     }
 }
 

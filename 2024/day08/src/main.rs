@@ -10,9 +10,9 @@ use std::{
 fn main() {
     if let Ok(contents) = fs::read_to_string("./input.txt") {
         let answer = part1(&contents);
-        println!("Day 1 Part 1: {answer}");
+        println!("Day 8 Part 1: {answer}");
         let answer = part2(&contents);
-        println!("Day 1 Part 2: {answer}");
+        println!("Day 8 Part 2: {answer}");
     }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
